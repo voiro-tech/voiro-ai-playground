@@ -12,11 +12,11 @@ interface Message {
 }
 
 const SUGGESTIONS = [
-  'How did Times of India perform in March?',
-  'Which campaigns are underdelivering?',
-  'Compare all publishers by revenue',
-  'What is inventory availability across all publishers?',
-  'Full performance breakdown for NDTV',
+  'Are there any active drift alerts I should know about?',
+  'What is the delivery status on Sports Inventory this week?',
+  'Why is Connected TV fill rate dropping?',
+  'How does Premium OTT compare to industry benchmarks?',
+  'Which campaigns are underdelivering right now?',
 ];
 
 @Component({
