@@ -84,7 +84,7 @@ async function runAgentLoop(messages) {
 
   for (let i = 0; i < 5; i++) {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       tools: TOOLS,
