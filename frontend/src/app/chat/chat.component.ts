@@ -282,8 +282,9 @@ export class ChatComponent {
 
   constructor(private http: HttpClient) {}
 
-  onEnter(e: KeyboardEvent) {
-    if (!e.shiftKey) { e.preventDefault(); this.send(); }
+  onEnter(e: Event) {
+      const ke = e as KeyboardEvent;
+      if (!ke.shiftKey) { e.preventDefault(); this.send(); }
   }
 
   resize(e: Event) {
