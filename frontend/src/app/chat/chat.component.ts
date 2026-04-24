@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
 interface Message {
@@ -13,10 +14,11 @@ interface Message {
 
 const SUGGESTIONS = [
   'Are there any active drift alerts I should know about?',
+  'What is my credit balance?',
   'What is the delivery status on Sports Inventory this week?',
-  'Why is Connected TV fill rate dropping?',
   'How does Premium OTT compare to industry benchmarks?',
   'Which campaigns are underdelivering right now?',
+  'Show me my usage breakdown this month',
 ];
 
 @Component({
@@ -47,7 +49,7 @@ const SUGGESTIONS = [
         <div class="sidebar-footer">
           <span class="live-dot"></span>
           <span class="live-label">Demo · Jan–Apr 2024</span>
-          <p class="pub-list">Times of India · Hindustan Times · NDTV</p>
+          <p class="pub-list">Premium OTT · Sports Inventory · Connected TV</p>
         </div>
       </aside>
 
@@ -55,11 +57,24 @@ const SUGGESTIONS = [
       <main class="chat">
 
         <header class="chat-header">
-          <div>
+          <div class="header-left">
             <h1 class="chat-title">Intelligence Agent</h1>
             <span class="chat-sub">Revenue Operations Copilot</span>
           </div>
-          <button class="new-btn" (click)="clear()">New conversation</button>
+
+          <div class="header-right">
+            <!-- Credit widget -->
+            <div class="credit-widget" (click)="openBilling()" [class.credit-low]="creditWarning">
+              <div class="credit-icon">◈</div>
+              <div class="credit-info">
+                <span class="credit-balance">{{ creditBalance }}</span>
+                <span class="credit-label">credits</span>
+              </div>
+              <button class="topup-btn">Top up</button>
+            </div>
+
+            <button class="new-btn" (click)="clear()">New conversation</button>
+          </div>
         </header>
 
         <div class="messages" #msgContainer>
@@ -68,7 +83,7 @@ const SUGGESTIONS = [
           <div class="empty" *ngIf="messages.length === 0">
             <div class="empty-icon">◎</div>
             <h2>Ask anything about your revenue</h2>
-            <p>Query publisher performance, spot underdelivering campaigns,<br>check inventory — in plain language.</p>
+            <p>Query publisher performance, spot underdelivering campaigns,<br>check inventory and credits — in plain language.</p>
           </div>
 
           <!-- Messages -->
@@ -108,7 +123,7 @@ const SUGGESTIONS = [
               (blur)="focused = false"
               (input)="resize($event)"
               [disabled]="loading"
-              placeholder="Ask about revenue, campaigns, inventory..."
+              placeholder="Ask about revenue, campaigns, inventory, credits..."
               rows="1"
               class="textarea">
             </textarea>
@@ -139,14 +154,10 @@ const SUGGESTIONS = [
 
     /* ── Sidebar ── */
     .sidebar {
-      width: 256px;
-      min-width: 256px;
-      background: #131720;
-      border-right: 1px solid #1c2338;
-      display: flex;
-      flex-direction: column;
-      padding: 24px 14px;
-      gap: 28px;
+      width: 256px; min-width: 256px;
+      background: #131720; border-right: 1px solid #1c2338;
+      display: flex; flex-direction: column;
+      padding: 24px 14px; gap: 28px;
     }
     .logo { display: flex; flex-direction: column; gap: 6px; padding: 0 6px; }
     .logo-name { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
@@ -170,21 +181,43 @@ const SUGGESTIONS = [
     .suggestion:hover:not(:disabled) { background: #1c2338; color: #b8c8e8; }
     .suggestion:disabled { opacity: .35; cursor: not-allowed; }
     .sidebar-footer { margin-top: auto; padding: 0 6px; display: flex; flex-direction: column; gap: 5px; }
-    .live-dot {
-      display: inline-block; width: 6px; height: 6px;
-      border-radius: 50%; background: #3a9e6a; margin-right: 6px;
-    }
+    .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #3a9e6a; margin-right: 6px; }
     .live-label { font-size: 11.5px; color: #3a9e6a; }
     .pub-list { font-size: 10.5px; color: #2a384f; line-height: 1.6; margin-top: 2px; }
 
     /* ── Chat ── */
     .chat { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
     .chat-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 28px; border-bottom: 1px solid #1c2338; flex-shrink: 0;
+      padding: 16px 28px; border-bottom: 1px solid #1c2338; flex-shrink: 0;
     }
+    .header-left { display: flex; flex-direction: column; gap: 2px; }
     .chat-title { font-size: 16px; font-weight: 600; color: #fff; }
     .chat-sub { font-size: 12px; color: #374361; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    /* Credit widget */
+    .credit-widget {
+      display: flex; align-items: center; gap: 8px;
+      background: #13172a; border: 1px solid #1c2338;
+      border-radius: 8px; padding: 7px 12px;
+      cursor: pointer; transition: all .15s;
+    }
+    .credit-widget:hover { border-color: #2a3a6a; }
+    .credit-widget.credit-low { border-color: #f59e0b; }
+    .credit-icon { font-size: 14px; color: #4f8ef7; }
+    .credit-info { display: flex; align-items: baseline; gap: 4px; }
+    .credit-balance { font-size: 15px; font-weight: 700; color: #fff; }
+    .credit-label { font-size: 11px; color: #4a5a7a; }
+    .topup-btn {
+      background: rgba(79,142,247,.15); border: 1px solid rgba(79,142,247,.3);
+      border-radius: 4px; color: #4f8ef7; font-size: 11px; font-weight: 600;
+      padding: 3px 8px; cursor: pointer; font-family: inherit;
+      transition: background .15s;
+    }
+    .topup-btn:hover { background: rgba(79,142,247,.25); }
+
     .new-btn {
       background: none; border: 1px solid #1c2338; border-radius: 6px;
       color: #4a5a7a; font-size: 12px; padding: 6px 13px;
@@ -207,7 +240,7 @@ const SUGGESTIONS = [
     }
     .empty-icon { font-size: 36px; color: #1c2338; }
     .empty h2 { font-size: 19px; font-weight: 600; color: #5a6a8a; }
-    .empty p { font-size: 13.5px; line-height: 1.6; max-width: 360px; }
+    .empty p { font-size: 13.5px; line-height: 1.6; max-width: 380px; }
 
     .row { display: flex; align-items: flex-start; gap: 10px; max-width: 800px; }
     .row-user { flex-direction: row-reverse; margin-left: auto; }
@@ -229,7 +262,6 @@ const SUGGESTIONS = [
     .text strong { color: #fff; font-weight: 600; }
     .text em     { color: #7a8fb8; }
     .text code   { background: #1c2338; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; color: #7ab8ff; }
-
     .time { font-size: 10px; color: #2a384f; margin-top: 7px; }
 
     /* ── Loading dots ── */
@@ -280,11 +312,19 @@ export class ChatComponent {
   focused  = false;
   suggestions = SUGGESTIONS;
 
-  constructor(private http: HttpClient) {}
+  // Credit balance — dummy for now, replace with real API call
+  creditBalance = 347;
+  creditWarning = false;  // set to true when balance < 200
+
+  constructor(private http: HttpClient, private router: Router) {}
+
+  openBilling() {
+    this.router.navigate(['/billing']);
+  }
 
   onEnter(e: Event) {
-      const ke = e as KeyboardEvent;
-      if (!ke.shiftKey) { e.preventDefault(); this.send(); }
+    const ke = e as KeyboardEvent;
+    if (!ke.shiftKey) { e.preventDefault(); this.send(); }
   }
 
   resize(e: Event) {
@@ -308,7 +348,6 @@ export class ChatComponent {
     this.loading = true;
     this.scrollBottom();
 
-    // Build history for API — exclude the loading placeholder
     const apiMessages = this.messages
       .filter(m => !m.loading)
       .map(m => ({ role: m.role, content: m.content }));
