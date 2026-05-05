@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { environment } from '../../environments/environment';
 
 export interface User {
   email: string;
@@ -16,15 +15,14 @@ export interface LoginResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiBase = environment.apiUrl;
   private tokenKey = 'voiro_ai_token';
   private userKey  = 'voiro_ai_user';
 
   constructor(private http: HttpClient) {}
 
-  login(email: string, password: string): Observable<LoginResponse> {
+  login(email: string, password: string, apiUrl: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(
-      `${this.apiBase}/api/auth`,
+      `${apiUrl}/api/auth`,
       { action: 'login', email, password }
     ).pipe(
       tap(res => {
@@ -52,7 +50,6 @@ export class AuthService {
     const token = this.getToken();
     if (!token) return false;
     try {
-      // Check expiry from JWT payload
       const payload = JSON.parse(atob(token.split('.')[1]));
       return payload.exp * 1000 > Date.now();
     } catch {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../auth.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -199,15 +200,15 @@ export class LoginComponent {
     this.loading = true;
     this.error   = '';
 
-    this.auth.login(this.email, this.password).subscribe({
-      next: () => {
+    this.auth.login(this.email, this.password, environment.apiUrl).subscribe({
+        next: () => {
         this.loading = false;
         this.router.navigate(['/']);
-      },
-      error: (err) => {
+        },
+        error: (err) => {
         this.loading = false;
         this.error = err.error?.error || 'Invalid email or password. Please try again.';
-      }
+        }
     });
   }
 }
