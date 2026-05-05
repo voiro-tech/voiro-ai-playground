@@ -15,7 +15,7 @@ const APPROVED_USERS = [
   {
     email: "admin@voiro.com",
     // Default password: voiroai2024 — change this immediately
-    passwordHash: "$2b$10$rOzGKqhFGDHJqQwKJPqSEOK8mZxJqHqJ8HqJ8HqJ8HqJ8HqJ8Hq",
+    passwordHash: "a8f5f167f44f4964e6c998dee827110c",
     name: "Voiro Admin",
     role: "admin"
   }
