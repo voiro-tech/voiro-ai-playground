@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { AuthService } from '../auth.service';
 import { environment } from '../../environments/environment';
 
 interface Message {
@@ -73,6 +74,12 @@ const SUGGESTIONS = [
               <button class="topup-btn">Top up</button>
             </div>
 
+            <!-- User + logout -->
+            <div class="user-pill">
+              <span class="user-name">{{ userName }}</span>
+              <button class="logout-btn" (click)="logout()">Sign out</button>
+            </div>
+
             <button class="new-btn" (click)="clear()">New conversation</button>
           </div>
         </header>
@@ -100,14 +107,13 @@ const SUGGESTIONS = [
               <div class="dots" *ngIf="m.loading">
                 <span></span><span></span><span></span>
               </div>
-              <div *ngIf="!m.loading"
-                   class="text"
-                   [innerHTML]="fmt(m.content)">
-              </div>
+              <div *ngIf="!m.loading" class="text" [innerHTML]="fmt(m.content)"></div>
               <div class="time" *ngIf="!m.loading">{{ m.timestamp | date:'HH:mm' }}</div>
             </div>
 
-            <div class="avatar avatar-user" *ngIf="m.role === 'user'">U</div>
+            <div class="avatar avatar-user" *ngIf="m.role === 'user'">
+              {{ userInitial }}
+            </div>
           </div>
 
         </div>
@@ -145,10 +151,8 @@ const SUGGESTIONS = [
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     .shell {
-      display: flex;
-      height: 100vh;
-      background: #0f1117;
-      color: #e2e8f8;
+      display: flex; height: 100vh;
+      background: #0f1117; color: #e2e8f8;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
@@ -187,7 +191,6 @@ const SUGGESTIONS = [
 
     /* ── Chat ── */
     .chat { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
     .chat-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 28px; border-bottom: 1px solid #1c2338; flex-shrink: 0;
@@ -195,7 +198,7 @@ const SUGGESTIONS = [
     .header-left { display: flex; flex-direction: column; gap: 2px; }
     .chat-title { font-size: 16px; font-weight: 600; color: #fff; }
     .chat-sub { font-size: 12px; color: #374361; }
-    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
 
     /* Credit widget */
     .credit-widget {
@@ -214,9 +217,22 @@ const SUGGESTIONS = [
       background: rgba(79,142,247,.15); border: 1px solid rgba(79,142,247,.3);
       border-radius: 4px; color: #4f8ef7; font-size: 11px; font-weight: 600;
       padding: 3px 8px; cursor: pointer; font-family: inherit;
-      transition: background .15s;
     }
     .topup-btn:hover { background: rgba(79,142,247,.25); }
+
+    /* User pill */
+    .user-pill {
+      display: flex; align-items: center; gap: 10px;
+      background: #13172a; border: 1px solid #1c2338;
+      border-radius: 8px; padding: 6px 12px;
+    }
+    .user-name  { font-size: 12.5px; color: #7a8fb8; font-weight: 500; }
+    .logout-btn {
+      background: none; border: none; color: #374361;
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      padding: 0; transition: color .15s;
+    }
+    .logout-btn:hover { color: #ef4444; }
 
     .new-btn {
       background: none; border: 1px solid #1c2338; border-radius: 6px;
@@ -252,7 +268,7 @@ const SUGGESTIONS = [
       font-size: 12px; font-weight: 700; flex-shrink: 0;
     }
     .avatar-ai   { background: linear-gradient(135deg, #1b4a8a, #4f8ef7); color: #fff; }
-    .avatar-user { background: #1c2338; color: #4a5a7a; }
+    .avatar-user { background: #1c2338; color: #7a8fb8; font-size: 11px; }
 
     .bubble { padding: 12px 16px; border-radius: 12px; max-width: 660px; line-height: 1.65; }
     .bubble-user { background: #18213a; color: #c0d0f0; font-size: 13.5px; border-bottom-right-radius: 3px; }
@@ -311,15 +327,28 @@ export class ChatComponent {
   loading  = false;
   focused  = false;
   suggestions = SUGGESTIONS;
-
-  // Credit balance — dummy for now, replace with real API call
   creditBalance = 347;
-  creditWarning = false;  // set to true when balance < 200
+  creditWarning = false;
+  userName    = '';
+  userInitial = 'U';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private auth: AuthService
+  ) {
+    const user = this.auth.getUser();
+    if (user) {
+      this.userName    = user.name;
+      this.userInitial = user.name.charAt(0).toUpperCase();
+    }
+  }
 
-  openBilling() {
-    this.router.navigate(['/billing']);
+  openBilling() { this.router.navigate(['/billing']); }
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
   }
 
   onEnter(e: Event) {
@@ -354,7 +383,8 @@ export class ChatComponent {
 
     this.http.post<{ reply: string }>(
       `${environment.apiUrl}/api/chat`,
-      { messages: apiMessages }
+      { messages: apiMessages },
+      { headers: this.auth.getAuthHeaders() }
     ).subscribe({
       next: (res) => {
         const idx = this.messages.indexOf(loader);
@@ -364,14 +394,16 @@ export class ChatComponent {
         this.loading = false;
         this.scrollBottom();
       },
-      error: () => {
+      error: (err) => {
         const idx = this.messages.indexOf(loader);
         if (idx !== -1) {
-          this.messages[idx] = {
-            role: 'assistant',
-            content: 'Something went wrong. Please check the API connection and try again.',
-            timestamp: new Date()
-          };
+          const msg = err.status === 401
+            ? 'Session expired. Please sign in again.'
+            : 'Something went wrong. Please try again.';
+          this.messages[idx] = { role: 'assistant', content: msg, timestamp: new Date() };
+          if (err.status === 401) {
+            setTimeout(() => this.router.navigate(['/login']), 2000);
+          }
         }
         this.loading = false;
         this.scrollBottom();

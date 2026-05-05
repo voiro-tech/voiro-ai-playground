@@ -4,10 +4,13 @@ import { provideRouter, Routes } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { ChatComponent } from './app/chat/chat.component';
 import { BillingComponent } from './app/billing/billing.component';
+import { LoginComponent } from './app/login/login.component';
+import { authGuard } from './app/auth.guard';
 
 const routes: Routes = [
-  { path: '',        component: ChatComponent },
-  { path: 'billing', component: BillingComponent },
+  { path: 'login',   component: LoginComponent },
+  { path: '',        component: ChatComponent,   canActivate: [authGuard] },
+  { path: 'billing', component: BillingComponent, canActivate: [authGuard] },
 ];
 
 bootstrapApplication(AppComponent, {
