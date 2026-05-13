@@ -13,6 +13,7 @@ const JWT_SECRET = new TextEncoder().encode(
 const USERS = {
   "admin@voiro.com":  { password: "voiroai2024", name: "Voiro Admin", role: "admin" },
   "kavita@voiro.com": { password: "voiroai2024", name: "Kavita",      role: "user"  },
+  "sales@voiro.com": { password: "voiroaisales2024", name: "Voiro Sales", role: "user"  },
   // Add more users here:
   // "name@voiro.com": { password: "theirpassword", name: "Their Name", role: "user" },
 };
